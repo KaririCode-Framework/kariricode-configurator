@@ -4,10 +4,7 @@ declare(strict_types=1);
 
 namespace KaririCode\Configurator\Contract\Configurator;
 
-/**
- * Interface for configuration management.
- */
-interface ConfigManager
+interface ConfigurationManager
 {
     /**
      * Load configuration from a file.

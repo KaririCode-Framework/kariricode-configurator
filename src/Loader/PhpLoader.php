@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace KaririCode\Configurator\Loader;
 
-use KaririCode\Configurator\Exception\ConfigException;
+use KaririCode\Configurator\Exception\ConfigurationException;
 
 class PhpLoader extends FileLoader
 {
@@ -15,14 +15,14 @@ class PhpLoader extends FileLoader
         $config = require $path;
 
         if (!is_array($config)) {
-            throw new ConfigException("PHP configuration file must return an array: {$path}");
+            throw new ConfigurationException("PHP configuration file must return an array: {$path}");
         }
 
         return $config;
     }
 
-    public function getType(): string
+    public function getTypes(): array
     {
-        return 'php';
+        return ['php'];
     }
 }

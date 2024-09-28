@@ -4,13 +4,17 @@ declare(strict_types=1);
 
 namespace KaririCode\Configurator;
 
-use KaririCode\Configurator\Contract\Configurator\ConfigManager;
+use KaririCode\Configurator\Contract\Configurator\ConfigurationManager;
 use KaririCode\Configurator\Contract\Configurator\Loader;
 use KaririCode\Configurator\Contract\Configurator\MergeStrategy;
 use KaririCode\Configurator\Contract\Configurator\Storage;
-use KaririCode\Configurator\Exception\ConfigException;
+use KaririCode\Configurator\Contract\Validator\Validator;
+use KaririCode\Configurator\Exception\ConfigurationException;
+use KaririCode\Configurator\MergeStrategy\OverwriteMerge;
+use KaririCode\Configurator\Storage\TreeMapStorage;
+use KaririCode\Configurator\Validator\AutoValidator;
 
-final class Config implements ConfigManager
+final class Configuration implements ConfigurationManager
 {
     /**
      * @var array<string, Loader>
@@ -18,8 +22,9 @@ final class Config implements ConfigManager
     private array $loaders = [];
 
     public function __construct(
-        private readonly Storage $storage,
-        private readonly MergeStrategy $mergeStrategy
+        private readonly Storage $storage = new TreeMapStorage(),
+        private readonly Validator $validator = new AutoValidator(),
+        private readonly MergeStrategy $mergeStrategy = new OverwriteMerge(),
     ) {
     }
 
@@ -27,7 +32,22 @@ final class Config implements ConfigManager
     {
         $loader = $this->getLoaderForFile($path);
         $config = $loader->load($path);
-        $this->mergeStrategy->merge($this->storage, $config);
+        $prefix = pathinfo($path, PATHINFO_FILENAME);
+
+        $this->validateConfig($config, $prefix);
+        $this->loadRecursive($config, $prefix);
+    }
+
+    private function loadRecursive(array $config, string $prefix = ''): void
+    {
+        foreach ($config as $key => $value) {
+            $fullKey = $prefix ? $prefix . '.' . $key : $key;
+            if (is_array($value)) {
+                $this->loadRecursive($value, $fullKey);
+            } else {
+                $this->storage->set($fullKey, $value);
+            }
+        }
     }
 
     public function loadDirectory(string $directory): void
@@ -60,40 +80,39 @@ final class Config implements ConfigManager
 
     public function registerLoader(Loader $loader): void
     {
-        $this->loaders[$loader->getType()] = $loader;
+        $types = $loader->getTypes();
+        foreach ($types as $type) {
+            $this->loaders[$type] = $loader;
+        }
     }
 
-    /**
-     * Get the appropriate loader for a given file.
-     *
-     * @throws ConfigException
-     */
     private function getLoaderForFile(string $path): Loader
     {
         $extension = pathinfo($path, PATHINFO_EXTENSION);
         if (!isset($this->loaders[$extension])) {
-            throw new ConfigException("No loader registered for file type: {$extension}");
+            throw new ConfigurationException("No loader registered for file type: {$extension}");
         }
 
         return $this->loaders[$extension];
     }
 
-    /**
-     * Get all configuration files from a directory.
-     *
-     * @throws ConfigException
-     *
-     * @return array<string>
-     */
     private function getConfigFilesFromDirectory(string $directory): array
     {
         if (!is_dir($directory)) {
-            throw new ConfigException("Directory not found: {$directory}");
+            throw new ConfigurationException("Directory not found: {$directory}");
         }
 
         return array_filter(
             glob($directory . '/*') ?: [],
             fn ($file) => is_file($file) && in_array(pathinfo($file, PATHINFO_EXTENSION), array_keys($this->loaders), true)
         );
+    }
+
+    private function validateConfig(array $config, string $prefix = ''): void
+    {
+        foreach ($config as $key => $value) {
+            $fullKey = $prefix ? "$prefix.$key" : $key;
+            $this->validator->validate($value, $fullKey);
+        }
     }
 }

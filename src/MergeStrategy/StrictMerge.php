@@ -6,7 +6,7 @@ namespace KaririCode\Configurator\MergeStrategy;
 
 use KaririCode\Configurator\Contract\Configurator\MergeStrategy;
 use KaririCode\Configurator\Contract\Configurator\Storage;
-use KaririCode\Configurator\Exception\ConfigException;
+use KaririCode\Configurator\Exception\ConfigurationException;
 
 class StrictMerge implements MergeStrategy
 {
@@ -14,7 +14,7 @@ class StrictMerge implements MergeStrategy
     {
         foreach ($newConfig as $key => $value) {
             if ($storage->has($key)) {
-                throw new ConfigException("Configuration key '{$key}' already exists and cannot be overwritten in strict mode.");
+                throw new ConfigurationException("Configuration key '{$key}' already exists and cannot be overwritten in strict mode.");
             }
             $storage->set($key, $value);
         }

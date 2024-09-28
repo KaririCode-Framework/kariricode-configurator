@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace KaririCode\Configurator\Loader;
 
-use KaririCode\Configurator\Exception\ConfigException;
+use KaririCode\Configurator\Exception\ConfigurationException;
 
 /**
  * Loader for YAML configuration files.
@@ -16,20 +16,20 @@ class YamlLoader extends FileLoader
         $this->validateFile($path);
 
         if (!extension_loaded('yaml')) {
-            throw new ConfigException('YAML extension is not loaded');
+            throw new ConfigurationException('YAML extension is not loaded');
         }
 
         $config = yaml_parse_file($path);
 
         if (false === $config) {
-            throw new ConfigException("Failed to parse YAML file: {$path}");
+            throw new ConfigurationException("Failed to parse YAML file: {$path}");
         }
 
         return $config;
     }
 
-    public function getType(): string
+    public function getTypes(): array
     {
-        return 'yaml';
+        return ['yml', 'yaml'];
     }
 }

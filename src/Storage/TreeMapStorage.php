@@ -14,19 +14,17 @@ class TreeMapStorage implements Storage
     ) {
     }
 
-    public function get(string $key, mixed $default = null): TreeMap
+    public function get(string $key, mixed $default = null): mixed
     {
         $keys = explode('.', $key);
         $current = $this->treeMap;
 
-        foreach ($keys as $subKey) {
-            if (!$current->containsKey($subKey)) {
+        foreach ($keys as $_ => $subKey) {
+            if (!$current instanceof TreeMap || !$current->containsKey($subKey)) {
                 return $default;
             }
+
             $current = $current->get($subKey);
-            if (!$current instanceof TreeMap) {
-                return $current;
-            }
         }
 
         return $current;
@@ -41,7 +39,7 @@ class TreeMapStorage implements Storage
             if ($i === count($keys) - 1) {
                 $current->put($subKey, $value);
             } else {
-                if (!$current->containsKey($subKey) || !$current->get($subKey) instanceof TreeMap) {
+                if (!$current->containsKey($subKey)) {
                     $current->put($subKey, new TreeMap());
                 }
                 $current = $current->get($subKey);
@@ -72,11 +70,6 @@ class TreeMapStorage implements Storage
         return $this->flattenTreeMap($this->treeMap);
     }
 
-    /**
-     * Flatten a TreeMap into an associative array.
-     *
-     * @return array<string, mixed>
-     */
     private function flattenTreeMap(TreeMap $treeMap, string $prefix = ''): array
     {
         $result = [];

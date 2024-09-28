@@ -16,5 +16,5 @@ interface Loader
     /**
      * Get the file type this loader handles.
      */
-    public function getType(): string;
+    public function getTypes(): array;
 }
