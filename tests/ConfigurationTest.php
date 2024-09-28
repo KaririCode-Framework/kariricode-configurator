@@ -17,7 +17,7 @@ use KaririCode\Configurator\Validator\AutoValidator;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
-class ConfigurationTest extends TestCase
+final class ConfigurationTest extends TestCase
 {
     private string $tempDir;
     private Configuration $configuration;
