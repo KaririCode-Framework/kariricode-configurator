@@ -19,9 +19,9 @@ final class Configuration implements ConfigurationManager
     private array $loaders = [];
 
     public function __construct(
-        private readonly Storage $storage = new TreeMapStorage(),
-        private readonly Validator $validator = new AutoValidator(),
-        private readonly MergeStrategy $mergeStrategy = new OverwriteMerge(),
+        private Storage $storage = new TreeMapStorage(),
+        private Validator $validator = new AutoValidator(),
+        private MergeStrategy $mergeStrategy = new OverwriteMerge(),
     ) {
     }
 
@@ -119,7 +119,12 @@ final class Configuration implements ConfigurationManager
     {
         foreach ($config as $key => $value) {
             $fullKey = $this->buildFullKey($prefix, $key);
-            $this->validator->validate($value, $fullKey);
+
+            if (is_array($value)) {
+                $this->validateConfig($value, $fullKey);
+            } else {
+                $this->validator->validate($value, $fullKey);
+            }
         }
     }
 

@@ -39,14 +39,12 @@ class AutoValidator implements Validator
             'null' => fn ($v): bool => is_null($v),
         ];
 
-        if (isset($typeValidators[$type]) && !$typeValidators[$type]($value)) {
-            throw new ConfigurationException("Configuration '$key' must be a $type.");
+        if (!isset($typeValidators[$type])) {
+            throw new ConfigurationException("Unsupported configuration type '$type' for key '$key'.");
         }
 
-        if ('array' === $type && is_array($value)) {
-            foreach ($value as $subKey => $subValue) {
-                $this->validate($subValue, "$key.$subKey");
-            }
+        if (!$typeValidators[$type]($value)) {
+            throw new ConfigurationException("Configuration '$key' must be of type $type.");
         }
     }
 }
