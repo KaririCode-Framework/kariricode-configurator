@@ -16,9 +16,6 @@ use KaririCode\Configurator\Validator\AutoValidator;
 
 final class Configuration implements ConfigurationManager
 {
-    /**
-     * @var array<string, Loader>
-     */
     private array $loaders = [];
 
     public function __construct(
@@ -28,20 +25,20 @@ final class Configuration implements ConfigurationManager
     ) {
     }
 
-    public function load(string $path): void
+    public function load(string $filePath): void
     {
-        $loader = $this->getLoaderForFile($path);
-        $config = $loader->load($path);
-        $prefix = pathinfo($path, PATHINFO_FILENAME);
+        $loader = $this->getLoaderForFile($filePath);
+        $config = $loader->load($filePath);
+        $configName = pathinfo($filePath, PATHINFO_FILENAME);
 
-        $this->validateConfig($config, $prefix);
-        $this->loadRecursive($config, $prefix);
+        $this->validateConfig($config, $configName);
+        $this->loadRecursive($config, $configName);
     }
 
     private function loadRecursive(array $config, string $prefix = ''): void
     {
         foreach ($config as $key => $value) {
-            $fullKey = $prefix ? $prefix . '.' . $key : $key;
+            $fullKey = $this->buildFullKey($prefix, $key);
             if (is_array($value)) {
                 $this->loadRecursive($value, $fullKey);
             } else {
@@ -50,11 +47,11 @@ final class Configuration implements ConfigurationManager
         }
     }
 
-    public function loadDirectory(string $directory): void
+    public function loadDirectory(string $directoryPath): void
     {
-        $files = $this->getConfigFilesFromDirectory($directory);
-        foreach ($files as $file) {
-            $this->load($file);
+        $configFiles = $this->getConfigFilesFromDirectory($directoryPath);
+        foreach ($configFiles as $filePath) {
+            $this->load($filePath);
         }
     }
 
@@ -86,33 +83,48 @@ final class Configuration implements ConfigurationManager
         }
     }
 
-    private function getLoaderForFile(string $path): Loader
+    private function getLoaderForFile(string $filePath): Loader
     {
-        $extension = pathinfo($path, PATHINFO_EXTENSION);
-        if (!isset($this->loaders[$extension])) {
-            throw new ConfigurationException("No loader registered for file type: {$extension}");
+        $fileExtension = pathinfo($filePath, PATHINFO_EXTENSION);
+        $isLoaderAvailable = isset($this->loaders[$fileExtension]);
+
+        if (!$isLoaderAvailable) {
+            throw new ConfigurationException("No loader registered for file type: {$fileExtension}");
         }
 
-        return $this->loaders[$extension];
+        return $this->loaders[$fileExtension];
     }
 
-    private function getConfigFilesFromDirectory(string $directory): array
+    private function getConfigFilesFromDirectory(string $directoryPath): array
     {
-        if (!is_dir($directory)) {
-            throw new ConfigurationException("Directory not found: {$directory}");
+        if (!is_dir($directoryPath)) {
+            throw new ConfigurationException("Directory not found: {$directoryPath}");
         }
 
-        return array_filter(
-            glob($directory . '/*') ?: [],
-            fn ($file) => is_file($file) && in_array(pathinfo($file, PATHINFO_EXTENSION), array_keys($this->loaders), true)
-        );
+        $allFiles = glob($directoryPath . '/*') ?: [];
+
+        return array_filter($allFiles, [$this, 'isValidConfigFile']);
+    }
+
+    private function isValidConfigFile(string $filePath): bool
+    {
+        $isFile = is_file($filePath);
+        $fileExtension = pathinfo($filePath, PATHINFO_EXTENSION);
+        $isSupportedExtension = in_array($fileExtension, array_keys($this->loaders), true);
+
+        return $isFile && $isSupportedExtension;
     }
 
     private function validateConfig(array $config, string $prefix = ''): void
     {
         foreach ($config as $key => $value) {
-            $fullKey = $prefix ? "$prefix.$key" : $key;
+            $fullKey = $this->buildFullKey($prefix, $key);
             $this->validator->validate($value, $fullKey);
         }
+    }
+
+    private function buildFullKey(string $prefix, mixed $key): string
+    {
+        return $prefix ? "$prefix.$key" : $key;
     }
 }

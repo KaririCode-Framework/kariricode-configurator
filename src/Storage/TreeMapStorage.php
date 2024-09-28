@@ -16,50 +16,46 @@ class TreeMapStorage implements Storage
 
     public function get(string $key, mixed $default = null): mixed
     {
-        $keys = explode('.', $key);
-        $current = $this->treeMap;
+        $keyParts = explode('.', $key);
+        $currentNode = $this->treeMap;
 
-        foreach ($keys as $_ => $subKey) {
-            if (!$current instanceof TreeMap || !$current->containsKey($subKey)) {
+        foreach ($keyParts as $keyPart) {
+            if (!$this->isValidTreeMapNode($currentNode, $keyPart)) {
                 return $default;
             }
-
-            $current = $current->get($subKey);
+            $currentNode = $currentNode->get($keyPart);
         }
 
-        return $current;
+        return $currentNode;
     }
 
     public function set(string $key, mixed $value): void
     {
-        $keys = explode('.', $key);
-        $current = $this->treeMap;
+        $keyParts = explode('.', $key);
+        $currentNode = $this->treeMap;
 
-        foreach ($keys as $i => $subKey) {
-            if ($i === count($keys) - 1) {
-                $current->put($subKey, $value);
+        foreach ($keyParts as $index => $keyPart) {
+            $isLastKeyPart = $index === count($keyParts) - 1;
+
+            if ($isLastKeyPart) {
+                $currentNode->put($keyPart, $value);
             } else {
-                if (!$current->containsKey($subKey)) {
-                    $current->put($subKey, new TreeMap());
-                }
-                $current = $current->get($subKey);
+                $this->ensureNodeExists($currentNode, $keyPart);
+                $currentNode = $currentNode->get($keyPart);
             }
         }
     }
 
     public function has(string $key): bool
     {
-        $keys = explode('.', $key);
-        $current = $this->treeMap;
+        $keyParts = explode('.', $key);
+        $currentNode = $this->treeMap;
 
-        foreach ($keys as $subKey) {
-            if (!$current->containsKey($subKey)) {
+        foreach ($keyParts as $keyPart) {
+            if (!$this->isValidTreeMapNode($currentNode, $keyPart)) {
                 return false;
             }
-            $current = $current->get($subKey);
-            if (!$current instanceof TreeMap) {
-                return true;
-            }
+            $currentNode = $currentNode->get($keyPart);
         }
 
         return true;
@@ -83,5 +79,17 @@ class TreeMapStorage implements Storage
         }
 
         return $result;
+    }
+
+    private function isValidTreeMapNode(mixed $node, string $key): bool
+    {
+        return $node instanceof TreeMap && $node->containsKey($key);
+    }
+
+    private function ensureNodeExists(TreeMap $node, string $key): void
+    {
+        if (!$node->containsKey($key)) {
+            $node->put($key, new TreeMap());
+        }
     }
 }
