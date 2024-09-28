@@ -2,9 +2,10 @@ ARG PHP_VERSION=8.3
 
 FROM php:${PHP_VERSION}-alpine
 
-RUN apk update && apk add --no-cache $PHPIZE_DEPS linux-headers \
-    && pecl install xdebug \
-    && docker-php-ext-enable xdebug \
+# Install dependencies and YAML extension
+RUN apk update && apk add --no-cache $PHPIZE_DEPS linux-headers yaml-dev \
+    && pecl install xdebug yaml \
+    && docker-php-ext-enable xdebug yaml \
     && docker-php-ext-install sockets
 
 COPY .docker/php/kariricode-php.ini /usr/local/etc/php/conf.d/

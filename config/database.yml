@@ -1,0 +1,26 @@
+default: &default
+  driver: mysql
+  charset: utf8mb4
+  collation: utf8mb4_unicode_ci
+  prefix: ""
+  strict: true
+  engine: null
+
+development:
+  <<: *default
+  database: kariri_dev
+  username: dev_user
+  password: dev_password
+  host: localhost
+
+production:
+  <<: *default
+  database: kariri_prod
+  username: ${DB_USERNAME}
+  password: ${DB_PASSWORD}
+  host: ${DB_HOST}
+
+testing:
+  <<: *default
+  driver: sqlite
+  database: ":memory:"

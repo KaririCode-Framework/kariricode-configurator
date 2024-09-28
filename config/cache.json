@@ -1,0 +1,37 @@
+{
+  "default": "file",
+  "stores": {
+    "apc": {
+      "driver": "apc"
+    },
+    "array": {
+      "driver": "array"
+    },
+    "file": {
+      "driver": "file",
+      "path": "/path/to/cache"
+    },
+    "memcached": {
+      "driver": "memcached",
+      "persistent_id": "kariri_memcached",
+      "sasl": ["username", "password"],
+      "options": {
+        "compression": true,
+        "serializer": "json"
+      },
+      "servers": [
+        {
+          "host": "127.0.0.1",
+          "port": 11211,
+          "weight": 100
+        }
+      ]
+    },
+    "redis": {
+      "driver": "redis",
+      "connection": "default",
+      "lock_connection": "default"
+    }
+  },
+  "prefix": "kariri_cache"
+}
