@@ -37,14 +37,16 @@ final class Configuration implements ConfigurationManager
 
     private function loadRecursive(array $config, string $prefix = ''): void
     {
+        $mergeConfig = [];
         foreach ($config as $key => $value) {
             $fullKey = $this->buildFullKey($prefix, $key);
             if (is_array($value)) {
                 $this->loadRecursive($value, $fullKey);
             } else {
-                $this->storage->set($fullKey, $value);
+                $mergeConfig[$fullKey] = $value;
             }
         }
+        $this->mergeStrategy->merge($this->storage, $mergeConfig);
     }
 
     public function loadDirectory(string $directoryPath): void
